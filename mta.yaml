@@ -1,7 +1,88 @@
-_schema-version: '3.1'
+_schema-version: "3.1"
 ID: hc_officesupplies
+description: A simple CAP project.
 version: 1.0.0
-description: "A simple CAP project."
+modules:
+  - name: hc_officesupplies-srv
+    type: nodejs
+    path: gen/srv
+    requires:
+      - name: hc_officesupplies-auth
+      - name: hc_officesupplies-db
+      - name: hc_officesupplies-messaging
+      - name: hc_officesupplies-logging
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+    parameters:
+      buildpack: nodejs_buildpack
+    build-parameters:
+      builder: npm
+  - name: hc_officesupplies-db-deployer
+    type: hdb
+    path: gen/db
+    requires:
+      - name: hc_officesupplies-db
+        properties:
+          TARGET_CONTAINER: ~{hdi-container-name}
+      - name: cross-container-service-1
+        group: SERVICE_REPLACEMENTS
+        properties:
+          key: ServiceName_1
+          service: ~{the-service-name}
+    parameters:
+      buildpack: nodejs_buildpack
+  - name: hc_officesupplies
+    type: approuter.nodejs
+    path: app/router
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          forwardAuthToken: true
+          name: srv-api
+          url: ~{srv-url}
+      - name: hc_officesupplies-auth
+      - name: hc_officesupplies-logging
+    parameters:
+      disk-quota: 256M
+      keep-existing-routes: true
+      memory: 256M
+resources:
+  - name: hc_officesupplies-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      config:
+        tenant-mode: dedicated
+        xsappname: hc_officesupplies-${org}-${space}
+      path: ./xs-security.json
+      service: xsuaa
+      service-plan: application
+  - name: hc_officesupplies-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+    properties:
+      hdi-container-name: ${service-name}
+  - name: hc_officesupplies-messaging
+    type: org.cloudfoundry.managed-service
+    parameters:
+      path: ./event-mesh.json
+      service: enterprise-messaging
+      service-plan: default
+  - name: hc_officesupplies-logging
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: application-logs
+      service-plan: standard
+  - name: cross-container-service-1
+    type: org.cloudfoundry.existing-service
+    parameters:
+      service-name: dev
+    properties:
+      the-service-name: ${service-name}
 parameters:
   enable-parallel-deployments: true
 build-parameters:
@@ -10,72 +91,3 @@ build-parameters:
       commands:
         - npm ci
         - npx cds build --production
-modules:
-  - name: hc_officesupplies-srv
-    type: nodejs
-    path: gen/srv
-    parameters:
-      buildpack: nodejs_buildpack
-    build-parameters:
-      builder: npm
-    provides:
-      - name: srv-api # required by consumers of CAP services (e.g. approuter)
-        properties:
-          srv-url: ${default-url}
-    requires:
-      - name: hc_officesupplies-auth
-      - name: hc_officesupplies-db
-      - name: hc_officesupplies-messaging
-      - name: hc_officesupplies-logging
-
-  - name: hc_officesupplies-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-    requires:
-      - name: hc_officesupplies-db
-
-  - name: hc_officesupplies
-    type: approuter.nodejs
-    path: app/router
-    parameters:
-      keep-existing-routes: true
-      disk-quota: 256M
-      memory: 256M
-    requires:
-      - name: srv-api
-        group: destinations
-        properties:
-          name: srv-api # must be used in xs-app.json as well
-          url: ~{srv-url}
-          forwardAuthToken: true
-      - name: hc_officesupplies-auth
-      - name: hc_officesupplies-logging
-
-resources:
-  - name: hc_officesupplies-auth
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: xsuaa
-      service-plan: application
-      path: ./xs-security.json
-      config:
-        xsappname: hc_officesupplies-${org}-${space}
-        tenant-mode: dedicated
-  - name: hc_officesupplies-db
-    type: com.sap.xs.hdi-container
-    parameters:
-      service: hana
-      service-plan: hdi-shared
-  - name: hc_officesupplies-messaging
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: enterprise-messaging
-      service-plan: default
-      path: ./event-mesh.json
-  - name: hc_officesupplies-logging
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: application-logs
-      service-plan: standard

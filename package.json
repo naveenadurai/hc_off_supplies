@@ -7,7 +7,7 @@
   "private": true,
   "dependencies": {
     "@sap/cds": "^7",
-    "@sap/cds-hana": "^2.0.0",
+    "@sap/cds-hana": "^2",
     "@sap/xssec": "^3",
     "express": "^4"
   },
@@ -16,14 +16,18 @@
     "@sap/cds-dk": "^7"
   },
   "scripts": {
-    "start": "cds-serve"
+    "start": "cds run"
   },
   "cds": {
+    "hana": {
+      "deploy-format": "hdbtable"
+    },
     "requires": {
-      "auth": "xsuaa",
-      "db": "hana",
-      "messaging": {
-        "kind": "enterprise-messaging"
+      "db": {
+        "kind": "hana"
+      },
+      "[hybrid]": {
+        "db": "hana"
       }
     }
   }
