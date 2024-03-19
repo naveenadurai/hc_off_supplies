@@ -21,16 +21,11 @@ modules:
       builder: npm
   - name: hc_officesupplies-db-deployer
     type: hdb
-    path: gen/db
+    path: db
     requires:
       - name: hc_officesupplies-db
         properties:
           TARGET_CONTAINER: ~{hdi-container-name}
-      - name: cross-container-service-1
-        group: SERVICE_REPLACEMENTS
-        properties:
-          key: ServiceName_1
-          service: ~{the-service-name}
     parameters:
       buildpack: nodejs_buildpack
   - name: hc_officesupplies
@@ -78,11 +73,7 @@ resources:
       service: application-logs
       service-plan: standard
   - name: cross-container-service-1
-    type: org.cloudfoundry.existing-service
-    parameters:
-      service-name: dev
-    properties:
-      the-service-name: ${service-name}
+    type: deleteme
 parameters:
   enable-parallel-deployments: true
 build-parameters:
