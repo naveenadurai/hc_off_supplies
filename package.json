@@ -13,10 +13,11 @@
   },
   "devDependencies": {
     "@cap-js/sqlite": "^1.5.1",
-    "@sap/cds-dk": "^7"
+    "@sap/cds-dk": "^7",
+    "@sap/hdi-deploy": "4.9.2"
   },
   "scripts": {
-    "start": "cds run"
+    "start": "cds-serve"
   },
   "cds": {
     "hana": {
@@ -24,7 +25,7 @@
     },
     "requires": {
       "db": {
-        "kind": "hana"
+
       },
       "[hybrid]": {
         "db": "hana"
